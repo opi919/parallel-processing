@@ -1,5 +1,5 @@
-# Command for unlimited process
-mpirun -np 50 -use-hwthread-cpus --oversubscribe hello_mpil
+# Command for more than 4 process
+mpirun -np 50 -use-hwthread-cpus --oversubscribe filename
 
 # Command for 1
 

@@ -45,7 +45,6 @@ int main(int argc, char **argv)
     double start_time = MPI_Wtime();
 
     // Broadcast dimensions to all processes
-    // MPI_Bcast( void* buffer , MPI_Count count , MPI_Datatype datatype , int root , MPI_Comm comm);
     MPI_Bcast(&K, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -58,14 +57,16 @@ int main(int argc, char **argv)
     int start = rank * local_matrices + min(rank, remainder);
     int end = start + local_matrices + (rank < remainder ? 1 : 0);
 
-    // Initialize matrices A, B, and C for each of the local matrices
-    vector<vector<int>> A(M, vector<int>(N));
-    vector<vector<int>> B(N, vector<int>(P));
-    vector<vector<int>> C(M, vector<int>(P));
-
-    // matrices A and B with random values
+    // matrices A, B, and C with random values for each process
     for (int k = start; k < end; ++k)
     {
+        vector<vector<int>> A(M, vector<int>(N));
+        vector<vector<int>> B(N, vector<int>(P));
+        vector<vector<int>> C(M, vector<int>(P));
+
+        // Generate random values for matrices A and B on each process
+        srand(rank * K + k + time(NULL)); // Use a unique seed for each process
+
         for (int i = 0; i < M; ++i)
         {
             for (int j = 0; j < N; ++j)

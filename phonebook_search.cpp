@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <algorithm>
 #include <mpi.h>
 
 using namespace std;
@@ -45,11 +46,11 @@ vector<string> convertStringToVector(const string &text)
     return words;
 }
 
-void searchAndPrint(const string &name, const string &phone, const string &searchName, int rank)
+void searchAndPrint(const string &name, const string &phone, const string &searchName, int rank, vector<string> &matches)
 {
-    if (name.size() == searchName.size() && equal(name.begin(), name.end(), searchName.begin()))
+    if (name.find(searchName) != string::npos)
     {
-        cout << name << " " << phone << " found by process " << rank << ".\n";
+        matches.push_back(name + " " + phone + " found by process " + to_string(rank) + ".");
     }
 }
 
@@ -78,6 +79,8 @@ int main(int argc, char **argv)
 
     double startTime = MPI_Wtime();
 
+    vector<string> allMatches;
+
     if (rank == 0)
     {
         vector<string> names, phoneNumbers;
@@ -91,6 +94,40 @@ int main(int argc, char **argv)
             sendStringToProcess(convertVectorToString(names, start, end), i);
             sendStringToProcess(convertVectorToString(phoneNumbers, start, end), i);
         }
+
+        // Process names on rank 0
+        string nameToSearch = "S";
+        bool found = false;
+        for (size_t i = 0; i < names.size(); i++)
+        {
+            searchAndPrint(names[i], phoneNumbers[i], nameToSearch, rank, allMatches);
+            if (names[i].find(nameToSearch) != string::npos)
+            {
+                found = true;
+            }
+        }
+
+        // Receive results from other processes
+        for (int i = 1; i < size; i++)
+        {
+            string receivedMatches = receiveStringFromProcess(i);
+            cout << "received: " << receivedMatches << endl;
+            vector<string> matches = convertStringToVector(receivedMatches);
+            allMatches.insert(allMatches.end(), matches.begin(), matches.end());
+        }
+
+        // Print all matches or "Not found"
+        if (found && !allMatches.empty())
+        {
+            for (const auto &match : allMatches)
+            {
+                cout << match << endl;
+            }
+        }
+        else
+        {
+            cout << "Name not found." << endl;
+        }
     }
     else
     {
@@ -99,11 +136,15 @@ int main(int argc, char **argv)
         vector<string> names = convertStringToVector(receivedNames);
         vector<string> phoneNumbers = convertStringToVector(receivedPhoneNumbers);
 
-        string nameToSearch = "John";
+        vector<string> matches;
+        string nameToSearch = "S";
         for (size_t i = 0; i < names.size(); i++)
         {
-            searchAndPrint(names[i], phoneNumbers[i], nameToSearch, rank);
+            searchAndPrint(names[i], phoneNumbers[i], nameToSearch, rank, matches);
         }
+
+        // Send matches back to rank 0
+        sendStringToProcess(convertVectorToString(matches, 0, matches.size()), 0);
     }
 
     double finishTime = MPI_Wtime();

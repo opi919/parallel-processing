@@ -65,13 +65,13 @@ int main(int argc, char **argv)
         vector<vector<int>> C(M, vector<int>(P));
 
         // Generate random values for matrices A and B on each process
-        srand(rank * K + k + time(NULL)); // Use a unique seed for each process
+        srand(rank * K + k + time(NULL));
 
         for (int i = 0; i < M; ++i)
         {
             for (int j = 0; j < N; ++j)
             {
-                A[i][j] = rand() % 100 + 1; // Random value between 1 and 100
+                A[i][j] = rand() % 1000 + 1; // Random value between 1 and 100
             }
         }
 
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
         {
             for (int j = 0; j < P; ++j)
             {
-                B[i][j] = rand() % 100 + 1; // Random value between 1 and 100
+                B[i][j] = rand() % 1000 + 1; // Random value between 1 and 100
             }
         }
 
